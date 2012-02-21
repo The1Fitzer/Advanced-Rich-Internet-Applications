@@ -1,15 +1,95 @@
 <html>
 	<head>
 		<title>Geo Loacation Lab</title>
-		<script type="text/html">
-			if(navigator.geolocation){
-				alert("Geolocation is available");
-			}else{
-				alert("geolocation services are not available");
-			}	
+		<script src="http://code.jquery.com/jquery-1.7.1.js"></script>
+		<script src="http://maps.google.com/maps/api/js?sensor=false"></script>
+		<script type="text/javascript">
+			var map;
+			$(document).ready(function(){
+				var myOptions = {
+					center: new google.maps.LatLng(53.5, -7),
+					zoom: 4,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				map = new google.maps.Map(document.getElementById("map"), myOptions);
+
+				$("#location").click(function(){
+					if(navigator && navigator.geolocation){
+						navigator.geolocation.getCurrentPosition(geo_success, geo_error);
+					}else{
+						alert("geolocation is not supported");
+					}		
+				});
+				
+				function geo_error(err){
+					if(err.code == 1){
+						error('The user denied the request for location information');
+					}else if(err.code == 2){
+						error('Your location information is unavailable');
+					}else if(err.code == 3){
+						error('The request to get your location timed out');
+					} else {
+						error('An unknown error occured while requesting your location');
+					}
+				}
+
+				function error(msg){
+					alert(msg);
+				}
+
+				function geo_success(position){
+					printLatLong(position.coords.latitude, position.coords.longitude);
+					printAddress(position.coords.latitude, position.coords.longitude);
+				}
+
+				function printLatLong(lat, lng){
+					$("#lat").html('<p>Lat: ' + lat + '</p>');
+					$("#long").html('<p>Long: ' + lng + '</p>');
+				}
+
+				function printAddress(latitude, longitude){
+					var geocoder = new google.maps.Geocoder();
+
+					var yourlocation = new google.maps.LatLng(latitude, longitude);
+
+					//setting the marker
+					var marker = new google.maps.Marker({
+						position: yourlocation,
+						title: "Hello World!",
+					});
+
+					//Setting bounds for the map. Allows
+					//you to reset the zoom and focus only
+					//on the users location
+					var bounds = new google.maps.LatLngBounds();
+					bounds.extend(yourlocation);
+					map.fitBounds(bounds);
+					marker.setMap(map);
+					//Adjust the zoom
+					map.setZoom(17);
+
+					geocoder.geocode({ 'latLng' : yourlocation } , function (results, status) {
+						if(status == google.maps.GeocoderStatus.OK){
+							if(results[0]){
+								$("#local").html('Your Address:<br/>' + results[0].formatted_address);
+							}else{
+								error("Google did not return any results");
+							}
+						}else{
+							error("Reverse Geocoding failed due to: " + status);
+						}
+					});
+				}	
+			});
 		</script>
 	</head>
 	<body>
-
+		<h3>Testing the Geolocation API</h3>
+		<input type="submit" value="Get Location" id="location"/>
+		<p id = "lat"></p>
+		<p id = "long"></p>
+		
+		<p id="local"></p>
+		<div id="map" style="height: 400px; width: 500px;"></div>
 	</body>
 </html>
